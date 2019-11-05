@@ -1,10 +1,12 @@
-// for WPA2 encrypted connections 
+// for WPA2 encrypted connections
+// By Mickael Cherouise
+// Thanks to Ilias Nafili alias IliShu for his help in understanding http protocol and node.js server.
+
 #include <SPI.h>
 #include <WiFiNINA.h>
-#include <ArduinoHttpClient.h>
 
-#define SECRET_SSID "devolo-8db"
-#define SECRET_PASS "DRVVWVEBAULTWEDL"
+#define SECRET_SSID "XXXXX"
+#define SECRET_PASS "XXXXX"
 
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
@@ -14,19 +16,14 @@ int buttonStateOff = LOW;
 int buttonStateOn = LOW;
 bool boolonoff = false;
 char charonoff;
-// ip meross: .132 Iliass:  .143 port 3000
-int portMSS210 = 3000;
-String serverMSS210 = "192.168.1.143";
+// Sart Plug Adress: .183 My Node Server: .107 MKR1010: .190
+int portMSS210 = 80;
+char serverMSS210[] = "192.168.1.183";
+//IPAddress serverMSS210(192,168,1,183);
 bool clientconnected = false;
 String postData;
-WiFiClient myWifiClient2;
-//WiFiClient myWifiClient3;
-//WiFiClient myClient1;
-HttpClient myClient2 = HttpClient(myWifiClient2, serverMSS210, portMSS210);
-//WebSocketClient myClient3 = WebSocketClient(myWifiClient3, serverMSS210, portMSS210);
-//WiFiClient myClient4;
-int codeResponse;
-char* postResponse;
+WiFiClient myClient;
+char codeResponse;
 
 void setup() 
 {
@@ -34,8 +31,7 @@ void setup()
   Serial.begin(9600);
   pinMode(0,INPUT);
   pinMode(1, INPUT);
-
-  
+ 
   while (!Serial) 
   {
     ; // wait for serial port to connect. Needed for native USB port only
@@ -81,11 +77,10 @@ void loop()
   if(buttonStateOff == HIGH)
   {
     Serial.println("Envoie de la requête: POWER OFF"); 
-    //postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":0}}}";
-    postData = String("{")+"\""+"header:{"+"\""+"from"+"\""+":"+"\""+"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe"+"\""+","+"\""+"messageId"+"\""+":"+"\""+"36f3d4b5da1545dd127176bdbbf8f2cf"+"\""+","+"\""+"method"+"\""+":"+"\""+"SET"+"\""+","+"\""+"namespace"+"\""+":"+"\""+"Appliance.Control.ToggleX"+"\""+","+"\""+"payloadVersion"+"\""+":1,"+"\""+"sign"+"\""+":"+"\""+"195a5ea4fb950c3cb475cd5daa5d4e64"+"\""+","+"\""+"timestamp"+"\""+":1571919319},"+"\""+"payload"+"\""+":{"+"\""+"togglex"+"\""+":{"+"\""+"channel"+"\""+":0,"+"\""+"onoff"+"\""+":0}}}";
+    postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":0}}}";
     Serial.println(postData);
       
-    request2();
+    requestFINAL();
 
     while(true) //wait if you hold the button...
     {
@@ -97,11 +92,10 @@ void loop()
   if(buttonStateOn == HIGH)
   {
     Serial.println("Envoie de la requête: POWER ON");
-    //postData = "{\"header:{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":1}}}";
-    postData = String("{")+"\""+"header:{"+"\""+"from"+"\""+":"+"\""+"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe"+"\""+","+"\""+"messageId"+"\""+":"+"\""+"36f3d4b5da1545dd127176bdbbf8f2cf"+"\""+","+"\""+"method"+"\""+":"+"\""+"SET"+"\""+","+"\""+"namespace"+"\""+":"+"\""+"Appliance.Control.ToggleX"+"\""+","+"\""+"payloadVersion"+"\""+":1,"+"\""+"sign"+"\""+":"+"\""+"195a5ea4fb950c3cb475cd5daa5d4e64"+"\""+","+"\""+"timestamp"+"\""+":1571919319},"+"\""+"payload"+"\""+":{"+"\""+"togglex"+"\""+":{"+"\""+"channel"+"\""+":0,"+"\""+"onoff"+"\""+":1}}}";
+    postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":1}}}";
     Serial.println(postData);
 
-    request2();
+    requestFINAL();
 
     while(true) //wait if you hold the button...
     {
@@ -120,144 +114,40 @@ void loop()
   }
 }
 
-void request1()
+void requestFINAL() // using WiFiNINA only
 {
-//  if (myClient1.connect(serverMSS210, portMSS210)) 
-//  {
-//    Serial.println("Connected.");
-//    //HTTP request 1st version:
-//    myClient1.println("POST /config HTTP/1.1");
-//    myClient1.print("Host:");myClient1.println(serverMSS210);
-//    myClient1.println("Content-Type:application/json");
-//    myClient1.println("Connection:close");
-//    myClient1.print("Content-Length:");myClient1.println(postData.length());
-//    myClient1.println("Accept-Encoding:gzip");
-//    myClient1.println("User-Agent:ARDUINO1");
-//    myClient1.println();
-//    myClient1.println(postData);
-//    Serial.print("Code received:");
-//    Serial.println(myClient1.read());
-//  }
-//  else
-//  {
-//    Serial.println("Connection failed.");
-//  }  
-}
+  myClient.stop();
+      
+  if (myClient.connect(serverMSS210, portMSS210)) 
+  {
+    Serial.println("Connected !");
+    
+    myClient.print
+    (
+      String("POST ") + "/config" + " HTTP/1.1\r\n" +
+      "Host: " + "192.168.1.183" + "\r\n" +
+      "Content-Type: application/json\r\n" +
+      "Content-Length: " + postData.length() + "\r\n" +
+      "Accept-Encoding: gzip\r\n" +
+      "User-Agent: Arduino/2.2.0\r\n" +
+      "Accept: */*\r\n" +
+      "Cache-Control: no-cache\r\n" +
+      "Connection: close\r\n" +
+      "\r\n" + // CR+LF pour signifier la fin du header
+      postData
+    );
 
-void request2()//not working
-{   
-  Serial.println("envoie de request2()");
-  
-  myClient2.beginRequest();
-  myClient2.post("/config");
-  myClient2.sendHeader("Host", serverMSS210);
-  myClient2.sendHeader("Content-Type", "application/json");
-  myClient2.sendHeader("Content-Length", postData.length());
-  //myClient2.sendHeader("Connection", "close");
-  myClient2.sendHeader("Accept-Encoding", "gzip");
-  //myClient2.sendHeader("User-Agent", "ArduinocacaHAHAHAHA");
-  myClient2.sendHeader("Cache-Control", "no-cache");
-  myClient2.sendHeader("Accept", "*/*");
-  myClient2.beginBody();
-  myClient2.print(postData);
-  myClient2.endRequest();
-  
-  int statusCode = myClient2.responseStatusCode();
-  String response = myClient2.responseBody();
-
-  Serial.print("Status code: ");
-  Serial.println(statusCode);
-  Serial.print("Response: ");
-  Serial.println(response);    
-}
-
-void request3()// not working 
-{
-//  int countReq3=0;
-//  
-//  if(myClient3.ping() ==0) //it's ok
-//  {
-//    Serial.println("ping1 ok !!");
-//  }
-//  else
-//  {
-//    Serial.println("ping1 FAILED");
-//  }
-//  
-//  if(myClient3.ping() ==0)
-//  {
-//    Serial.println("ping2 ok !!");
-//  }
-//  else
-//  {
-//    Serial.println("ping2 FAILED");
-//  }
-//  Serial.print("Connexion à la prise: ");
-//  Serial.println(myClient3.begin("/config")); //.begin doesn t work
-//  
-//  while(myClient3.connected())
-//  {
-//    Serial.print("Still connected");Serial.println(countReq3);
-//    myClient3.beginMessage(TYPE_TEXT);
-//    myClient3.print("Hello");
-//    myClient3.println(countReq3);
-//    myClient3.endMessage();
-//    countReq3++;
-//    int messageSizeReq3 = myClient3.parseMessage();
-//    if(messageSizeReq3 > 0)
+//    while(myClient.available())
 //    {
-//      Serial.println("On a recu un message:");
-//      Serial.println(myClient3.readString());
+//      codeResponse = myClient.read();
+//      Serial.write(codeResponse);
 //    }
-//    delay(5000);
-//    if(countReq3 > 3)
-//      break;
-//  }
-}
-
-void request4() // using WiFiNINA only
-{
-//  myClient4.stop();
-//
-//  // if there's a successful connection:
-//    Serial.print(
-//      String("HáéBH¤rÐ×EYN@À¨kÀ¨ü¦P=³U&PPOST ") + "/config" + " HTTP/1.1\r\n" +
-//      "Host:" + serverMSS210 + "\r\n" +
-//      "Content-Type:text/plain\r\n" +
-//      "Content-Length:" + postData.length() + "\r\n" +
-//      "Accept-Encoding:gzip\r\n" +
-//      "User-Agent:Arduino\r\n" +
-//      "Accept:*/*\r\n" +
-//      "Cache-Control:no-cache\r\n" +
-//      "Connection:close\r\n" +
-//      "\r\n" + // CR+LF pour signifier la fin du header
-//      postData + "\r\n");
-//      
-//  if (myClient4.connect(serverMSS210, portMSS210)) 
-//  {
-//    Serial.println("Connected !");
-//    
-//    myClient4.print(
-//      String("POST ") + "/config" + " HTTP/1.1\r\n" +
-//      "Host:" + serverMSS210 + "\r\n" +
-//      "Content-Type:application/json\r\n" +
-//      "Content-Length:" + postData.length() + "\r\n" +
-//      "Accept-Encoding:gzip\r\n" +
-//      "User-Agent:Arduino\r\n" +
-//      "Accept:*/*\r\n" +
-//      "Cache-Control:no-cache\r\n" +
-//      "Connection:close\r\n" +
-//      "\r\n" + // CR+LF pour signifier la fin du header
-//      postData + "\n");
-//
-//    codeResponse = myClient4.read();
-//    Serial.println(codeResponse);
-//  } 
-//  else 
-//  {
-//    // if you couldn't make a connection:
-//    Serial.println("Connection failed");
-//  }  
+  } 
+  else 
+  {
+    // if you couldn't make a connection:
+    Serial.println("Connection failed");
+  }  
 }
 
 void printWifiData() 
