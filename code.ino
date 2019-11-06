@@ -5,8 +5,8 @@
 #include <SPI.h>
 #include <WiFiNINA.h>
 
-#define SECRET_SSID "XXXXX"
-#define SECRET_PASS "XXXXX"
+#define SECRET_SSID "xxxx"
+#define SECRET_PASS "xxxx"
 
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
@@ -78,7 +78,6 @@ void loop()
   {
     Serial.println("Envoie de la requête: POWER OFF"); 
     postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":0}}}";
-    Serial.println(postData);
       
     requestFINAL();
 
@@ -93,7 +92,6 @@ void loop()
   {
     Serial.println("Envoie de la requête: POWER ON");
     postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":1}}}";
-    Serial.println(postData);
 
     requestFINAL();
 
@@ -117,31 +115,36 @@ void loop()
 void requestFINAL() // using WiFiNINA only
 {
   myClient.stop();
+  int cpt=0;
       
   if (myClient.connect(serverMSS210, portMSS210)) 
   {
     Serial.println("Connected !");
     
-    myClient.print
+    myClient.print // any spaces are important
     (
       String("POST ") + "/config" + " HTTP/1.1\r\n" +
-      "Host: " + "192.168.1.183" + "\r\n" +
+      //"Host: " + "192.168.1.180" + "\r\n" + // it works with an other Host ip... and without this line
       "Content-Type: application/json\r\n" +
-      "Content-Length: " + postData.length() + "\r\n" +
-      "Accept-Encoding: gzip\r\n" +
-      "User-Agent: Arduino/2.2.0\r\n" +
-      "Accept: */*\r\n" +
-      "Cache-Control: no-cache\r\n" +
-      "Connection: close\r\n" +
+      "Content-Length: " + postData.length() + "\r\n" + //this line is needed with the exact size value
+      //"Accept-Encoding: gzip\r\n" + // it works without this line
+      //"User-Agent: ISOSEL\r\n" + //"User-Agent: Arduino/2.2.0\r\n but it works with an other user-agent and without this line
+      //"Accept: */*\r\n" + // it works without this line
+      //"Cache-Control: no-cache\r\n" + //it works without this line
+      //"Connection: close\r\n" + // it works without this line
       "\r\n" + // CR+LF pour signifier la fin du header
       postData
     );
-
-//    while(myClient.available())
-//    {
-//      codeResponse = myClient.read();
-//      Serial.write(codeResponse);
-//    }
+    
+    while(myClient.available()==0)//wait until data reception
+    {
+      ;// add a counter and break; if it exceeds a value
+    }
+    while(myClient.available()) //write all incoming data characters on serial monitor
+    {
+      codeResponse = myClient.read();
+      Serial.write(codeResponse);      
+    }
   } 
   else 
   {
