@@ -1,4 +1,4 @@
-
+I would like to apologize in advance for my bad english :3
 
 Source codes are provided within "src" folder.
 
