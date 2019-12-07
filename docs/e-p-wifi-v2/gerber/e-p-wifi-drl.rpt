@@ -1,0 +1,29 @@
+Drill report for E:/Documents/TMC France/Projet Quiet Cook/kicad scao shield micka/e-p-wifi-v2/e-p-wifi.kicad_pcb
+Created on 06/12/2019 09:41:03
+
+Copper Layer Stackup:
+    =============================================================
+    L1 :  F.Cu                      front
+    L2 :  B.Cu                      back
+
+
+Drill file 'e-p-wifi-PTH.drl' contains
+    plated through holes:
+    =============================================================
+    T1  0,40mm  0,016"  (37 holes)
+    T2  0,50mm  0,020"  (2 holes)
+    T3  0,76mm  0,030"  (10 holes)
+    T4  0,80mm  0,031"  (46 holes)
+    T5  0,90mm  0,035"  (10 holes)
+    T6  1,00mm  0,039"  (41 holes)
+
+    Total plated holes count 146
+
+
+Drill file 'e-p-wifi-NPTH.drl' contains
+    unplated through holes:
+    =============================================================
+    T1  2,20mm  0,087"  (4 holes)
+    T2  3,30mm  0,130"  (3 holes)
+
+    Total unplated holes count 7
