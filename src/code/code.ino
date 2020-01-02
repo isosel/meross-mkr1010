@@ -206,8 +206,8 @@ void loop()
 
      while(true) //wait if you hold the button...
      {
-       buttonStateOff = digitalRead(0);
-       if(buttonStateOff == LOW)
+       buttonState = digitalRead(0);
+       if(buttonState == LOW) // if we don't push the button anymore buttonState will be equal to LOW and the while condition will end
          break;
      }
   }//end of the if condition 
