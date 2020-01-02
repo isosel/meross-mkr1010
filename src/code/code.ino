@@ -42,10 +42,13 @@
 // =============================================================================================================================
 // ============================================== PART 3 : the void loop function ==============================================
 // =============================================================================================================================
-// At the begening, the function reads button states and saves those state within two variables buttonStateOff & buttonStateOn
-// two if condition are reading those variables if they are HIGH or LOW
-// e.g. if ButtonStateOn is HIGH, the if condition if(buttonStateOn == HIGH) will be true
-// Hence, the program will initialize the postData variable with the JSON string which will turns ON the Smart Wifi Plug
+// At the begening, the function reads the button state and saves it within the variable buttonState
+// t
+// e.g. if ButtonState is HIGH, the if condition if(buttonState == HIGH) will be true
+// Hence, the program will initialize the postData variable with the JSON string which will turns ON or OFF the Smart Wifi Plug
+// Depending onOff variable which is a boolean.
+// if(onOff == true) then onOff = false, then onOff = true; This condition will swap between ON and OFF
+// then each time the user will press on the button, the smart plug will turn on, then off, then on, etc.
 // The JSON object, within the string contain this :
 // "togglex":
 // {
@@ -128,8 +131,8 @@ int compteur; //check the connection
 int portMSS210 = 80; // comon port for HTTP communication 
 char serverMSS210[] = "192.168.1.183"; // or IPAddress serverMSS210(192,168,1,183);
 
-int buttonStateOff = LOW;
-int buttonStateOn = LOW;
+int buttonState = LOW;
+bool onOff = false;
 
 String postData;
 char codeResponse;
@@ -139,7 +142,6 @@ void setup()
   //Initialize serial and wait for port to open:
   Serial.begin(9600);
   pinMode(0,INPUT);
-  pinMode(1, INPUT);
  
   while (!Serial) 
   {
@@ -180,37 +182,35 @@ void setup()
 
 void loop() 
 {
-  buttonStateOff = digitalRead(0); // the electrical state of the pin '0' is read.  
-  buttonStateOn = digitalRead(1); 
+  buttonState = digitalRead(0); // the electrical state of the pin '0' is read.  
   
-  if(buttonStateOff == HIGH) // == true
+  if(buttonState == HIGH) // == true
   {
-    Serial.println("Envoie de la requête: POWER OFF"); 
-    postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":0}}}";
-      
-    requestFINAL();
+     // this IF condition will swap between ON and OFF
+     if(onOff == false) 
+     {
+       onOff = true;
+       Serial.println("Envoie de la requête: POWER ON");
+       postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":1}}}";
+     }
+     else
+     {
+        onOff = false;
+        Serial.println("Envoie de la requête: POWER OFF");
+        postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":0}}}";
+     }
+ 
+     Serial.println("Envoie de la requête: POWER OFF"); 
+  
+     requestFINAL();
 
-    while(true) //wait if you hold the button...
-    {
-      buttonStateOff = digitalRead(0);
-      if(buttonStateOff == LOW)
-        break;
-    }
-  }
-  if(buttonStateOn == HIGH)
-  {
-    Serial.println("Envoie de la requête: POWER ON");
-    postData = "{\"header\":{\"from\":\"/app/339299-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"36f3d4b5da1545dd127176bdbbf8f2cf\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"195a5ea4fb950c3cb475cd5daa5d4e64\",\"timestamp\":1571919319},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":1}}}";
-
-    requestFINAL();
-
-    while(true) //wait if you hold the button...
-    {
-      buttonStateOn = digitalRead(1);
-      if(buttonStateOn == LOW)
-        break;
-    }    
-  }// fin du if(buttonStateOn)
+     while(true) //wait if you hold the button...
+     {
+       buttonStateOff = digitalRead(0);
+       if(buttonStateOff == LOW)
+         break;
+     }
+  }//end of the if condition 
 
   delay(100);
   compteur++;
