@@ -119,8 +119,8 @@
 
 WiFiClient myClient;
 
-#define SECRET_SSID "xxxx"
-#define SECRET_PASS "xxxx"
+#define SECRET_SSID "xxxx" // to be replaced by your router SSID 
+#define SECRET_PASS "xxxx" 
 
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
