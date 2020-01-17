@@ -129,7 +129,7 @@ int status = WL_IDLE_STATUS;
 int compteur; //check the connection
 
 int portMSS210 = 80; // comon port for HTTP communication 
-char serverMSS210[] = "192.168.1.183"; // or IPAddress serverMSS210(192,168,1,183);
+char serverMSS210[] = "192.168.0.15"; // or IPAddress serverMSS210(192,168,1,183);
 
 int buttonState = LOW;
 bool onOff = false;
@@ -199,8 +199,6 @@ void loop()
         Serial.println("Envoie de la requête: POWER OFF");
         postData = "{\"header\":{\"from\":\"/app/376606-e1853779db9fc7866cf6dfe0b697b0b8/subscribe\",\"messageId\":\"780935c42dfd4ccddb6690f8f90d23ce\",\"method\":\"SET\",\"namespace\":\"Appliance.Control.ToggleX\",\"payloadVersion\":1,\"sign\":\"eb284d7d4b4dc47f84039025dd23b646\",\"timestamp\":1578941608},\"payload\":{\"togglex\":{\"channel\":0,\"onoff\":0}}}";
      }
- 
-     Serial.println("Envoie de la requête: POWER OFF"); 
   
      requestFINAL();
 
